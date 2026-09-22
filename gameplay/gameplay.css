@@ -752,3 +752,35 @@
 @media (max-width: 1000px) {
     .game-container { grid-template-columns: 1fr; }
 }
+
+/* ============================================
+   ⌨️ TYPING BADGE (Gameplay)
+============================================ */
+.panel-avatar {
+    position: relative;
+}
+
+.panel-avatar .typing-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 28px;
+    height: 28px;
+    z-index: 10;
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.5));
+    pointer-events: none;
+    object-fit: cover;
+
+    opacity: 0;
+    transform: scale(0) rotate(-45deg);
+    transform-origin: bottom left;
+
+    transition:
+        opacity 0.25s ease,
+        transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.panel-avatar .typing-badge.show {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+}

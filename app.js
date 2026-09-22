@@ -6,6 +6,8 @@ import { CleanupAPI, ChatAPI } from './shared/firebase.js';
 import { state } from './shared/state.js';
 import { LobbyActions, AvatarActions, ChatActions, ReadyActions } from './lobby/lobby.js';
 import { GameplayActions, startGameListener } from './gameplay/gameplay.js';
+import { Modal } from './shared/modal.js';
+import { withLock } from './shared/button-lock.js';
 
 window.GameplayActions = GameplayActions;
 window.startGameListener = startGameListener;
@@ -80,6 +82,9 @@ async function sendGameChat() {
 
     input.value = '';
     input.focus();
+
+    // ⭐ reset typing
+    await GameplayActions.handleTyping();
 }
 
 // ============================================
@@ -88,27 +93,39 @@ async function sendGameChat() {
 function bindEvents() {
     // --- Home ---
     document.getElementById('btn-create-room')
-        .addEventListener('click', () => LobbyActions.createRoom());
+        .addEventListener('click', withLock('btn-create-room', () =>
+            LobbyActions.createRoom()
+        ));
 
     document.getElementById('btn-join-room')
-        .addEventListener('click', () => LobbyActions.joinRoom());
+        .addEventListener('click', withLock('btn-join-room', () =>
+            LobbyActions.joinRoom()
+        ));
 
     // --- Avatar Picker ---
     document.getElementById('btn-avatar-confirm')
-        .addEventListener('click', () => AvatarActions.confirm());
+        .addEventListener('click', withLock('btn-avatar-confirm', () =>
+            AvatarActions.confirm()
+        ));
 
     document.getElementById('btn-avatar-cancel')
         .addEventListener('click', () => AvatarActions.cancel());
 
     // --- Lobby ---
     document.getElementById('btn-leave')
-        .addEventListener('click', () => LobbyActions.leaveRoom());
+        .addEventListener('click', withLock('btn-leave', () =>
+            LobbyActions.leaveRoom()
+        ));
 
     document.getElementById('btn-start')
-        .addEventListener('click', () => GameplayActions.startGame());
+        .addEventListener('click', withLock('btn-start', () =>
+            GameplayActions.startGame()
+        ));
 
     document.getElementById('btn-ready')
-        .addEventListener('click', () => ReadyActions.toggle());
+        .addEventListener('click', withLock('btn-ready', () =>
+            ReadyActions.toggle()
+        ));
 
     document.getElementById('btn-copy-code')
         .addEventListener('click', async () => {
@@ -134,24 +151,38 @@ function bindEvents() {
             if (e.key === 'Enter') ChatActions.send();
         });
 
-    // ⭐ Gameplay Chat
+    // ⭐ Lobby Chat — typing indicator
+    document.getElementById('chat-input')
+        .addEventListener('input', () => ChatActions.handleTyping());
+
+    // --- Gameplay Chat ---
     document.getElementById('btn-game-chat-send')
-        .addEventListener('click', sendGameChat);
+        .addEventListener('click', withLock('btn-game-chat-send', sendGameChat, { minDuration: 500 }));
 
     document.getElementById('game-chat-input')
         .addEventListener('keypress', (e) => {
             if (e.key === 'Enter') sendGameChat();
         });
 
+    // ⭐ Gameplay Chat — typing indicator
+    document.getElementById('game-chat-input')
+        .addEventListener('input', () => GameplayActions.handleTyping());
+
     // --- Gameplay Actions ---
     document.getElementById('btn-discard')
-        .addEventListener('click', () => GameplayActions.throwCard());
+        .addEventListener('click', withLock('btn-discard', () =>
+            GameplayActions.throwCard()
+        ));
 
     document.getElementById('btn-fight')
-        .addEventListener('click', () => GameplayActions.decide('fight'));
+        .addEventListener('click', withLock('btn-fight', () =>
+            GameplayActions.decide('fight')
+        ));
 
     document.getElementById('btn-fold')
-        .addEventListener('click', () => GameplayActions.decide('fold'));
+        .addEventListener('click', withLock('btn-fold', () =>
+            GameplayActions.decide('fold')
+        ));
 
     document.getElementById('btn-back-home')
         .addEventListener('click', () => GameplayActions.backToHome());

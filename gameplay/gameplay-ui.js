@@ -6,9 +6,12 @@ import { GAME_CONFIG } from '../config/game-config.js';
 let showdownTimeouts = [];
 let selectedCardIndex = null;
 
-// ============================================
-// ⭐ ESCAPE HTML
-// ============================================
+let typingUsers = [];
+
+export function setTypingUsers(users) {
+    typingUsers = users || [];
+}
+
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
@@ -60,7 +63,6 @@ export function renderGame(data) {
         phase = 'discard',
     } = data;
 
-    // --- Discard Pile ---
     const discardEl = document.getElementById('discard-pile');
     discardEl.innerHTML = '';
     discardPile.forEach(item => {
@@ -82,7 +84,6 @@ export function renderGame(data) {
         discardEl.appendChild(slot);
     });
 
-    // --- My Hand ---
     const handEl = document.getElementById('hand-cards');
     handEl.innerHTML = '';
     const isMyTurn = currentTurn === myUid;
@@ -102,14 +103,13 @@ export function renderGame(data) {
         }));
     });
 
-    // --- Player Panels ---
+    // ⭐ Player panels
     const panelsEl = document.getElementById('player-panels');
     panelsEl.innerHTML = '';
     players.forEach(p => {
         panelsEl.appendChild(renderPlayerPanel(p, p.uid === myUid, p.uid === currentTurn));
     });
 
-    // --- Actions ---
     const actionArea = document.getElementById('action-area');
     const fightBtn = document.getElementById('btn-fight');
     const foldBtn = document.getElementById('btn-fold');
@@ -162,9 +162,6 @@ function handleCardClick(index, handLength) {
     }
 }
 
-// ============================================
-// ⭐ SELECTION
-// ============================================
 export function getSelectedCardIndex() {
     return selectedCardIndex;
 }
@@ -185,8 +182,10 @@ export function renderPlayerPanel(player, isMe = false, isActive = false) {
         div.classList.add('is-folded');
     }
 
+    // ⭐ Avatar + typing badge (สร้างใหม่ทุกครั้ง — gameplay panel rebuild บ่อยอยู่แล้ว)
     const avatarEl = document.createElement('div');
     avatarEl.className = 'panel-avatar';
+
     if (player.avatarId) {
         const img = document.createElement('img');
         img.src = `${GAME_CONFIG.AVATAR_PATH}${player.avatarId}.png`;
@@ -195,6 +194,14 @@ export function renderPlayerPanel(player, isMe = false, isActive = false) {
     } else {
         avatarEl.textContent = player.name.charAt(0).toUpperCase();
     }
+
+    // ⭐ Typing badge
+    const isTyping = typingUsers.some(t => t.uid === player.uid);
+    const badge = document.createElement('img');
+    badge.className = 'typing-badge' + (isTyping ? ' show' : '');
+    badge.src = './assets/avatars/ingame asset/chating badge.svg';
+    badge.alt = 'typing';
+    avatarEl.appendChild(badge);
 
     const infoEl = document.createElement('div');
     infoEl.className = 'panel-info';

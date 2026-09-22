@@ -2,10 +2,11 @@
 // 🚪 LOBBY
 // ============================================
 import { GAME_CONFIG, UI_TEXT } from '../config/game-config.js';
-import { RoomAPI, PresenceAPI, ChatAPI } from '../shared/firebase.js';
+import { RoomAPI, PresenceAPI, ChatAPI, TypingAPI } from '../shared/firebase.js';
 import { PresenceManager } from '../shared/presence.js';
 import { state, StateManager } from '../shared/state.js';
 import { generateRoomCode, switchScreen } from '../shared/utils.js';
+import { Modal } from '../shared/modal.js';
 
 const avatarPicker = {
     selectedAvatar: null,
@@ -15,12 +16,22 @@ const avatarPicker = {
 };
 
 let unsubscribeChat = null;
+let unsubscribeTyping = null;
+
+let typingUsers = [];
+let myTypingState = false;
 
 export const LobbyActions = {
 
     async createRoom() {
         const name = document.getElementById('player-name').value.trim();
-        if (!name) return alert(UI_TEXT.ERR.NEED_NAME);
+        if (!name) {
+            await Modal.alert(UI_TEXT.ERR.NEED_NAME, {
+                icon: '✏️',
+                title: 'ยังไม่ได้ใส่ชื่อ',
+            });
+            return;
+        }
 
         state.myName = name;
         avatarPicker.pendingAction = 'create';
@@ -33,19 +44,31 @@ export const LobbyActions = {
         const name = document.getElementById('player-name').value.trim();
         const code = document.getElementById('room-code-input').value.trim().toUpperCase();
 
-        if (!name) return alert(UI_TEXT.ERR.NEED_NAME);
-        if (!code) return alert(UI_TEXT.ERR.NEED_CODE);
+        if (!name) {
+            await Modal.alert(UI_TEXT.ERR.NEED_NAME, { icon: '✏️', title: 'ยังไม่ได้ใส่ชื่อ' });
+            return;
+        }
+        if (!code) {
+            await Modal.alert(UI_TEXT.ERR.NEED_CODE, { icon: '🔢', title: 'ยังไม่ได้ใส่รหัสห้อง' });
+            return;
+        }
         if (code.length !== GAME_CONFIG.ROOM_CODE_LENGTH) {
-            return alert(UI_TEXT.ERR.INVALID_CODE);
+            await Modal.alert(UI_TEXT.ERR.INVALID_CODE, { icon: '🔢', title: 'รหัสห้องไม่ถูกต้อง' });
+            return;
         }
 
         const room = await RoomAPI.get(code);
-        if (!room) return alert(UI_TEXT.ERR.ROOM_NOT_FOUND);
+        if (!room) {
+            await Modal.alert(UI_TEXT.ERR.ROOM_NOT_FOUND, { icon: '🔍', title: 'ไม่พบห้อง' });
+            return;
+        }
         if (room.players.length >= GAME_CONFIG.MAX_PLAYERS) {
-            return alert(UI_TEXT.ERR.ROOM_FULL);
+            await Modal.alert(UI_TEXT.ERR.ROOM_FULL, { icon: '🚫', title: 'ห้องเต็ม' });
+            return;
         }
         if (room.players.some(p => p.name.toLowerCase() === name.toLowerCase())) {
-            return alert(UI_TEXT.ERR.NAME_DUPLICATE);
+            await Modal.alert(UI_TEXT.ERR.NAME_DUPLICATE, { icon: '👤', title: 'ชื่อซ้ำ' });
+            return;
         }
 
         state.myName = name;
@@ -57,14 +80,17 @@ export const LobbyActions = {
 
     async confirmAvatar() {
         const avatarId = avatarPicker.selectedAvatar;
-        if (!avatarId) return alert(UI_TEXT.ERR.NEED_AVATAR);
+        if (!avatarId) {
+            await Modal.alert(UI_TEXT.ERR.NEED_AVATAR, { icon: '🎭', title: 'ยังไม่ได้เลือก Avatar' });
+            return;
+        }
 
         const action = avatarPicker.pendingAction;
         const data = avatarPicker.pendingData;
 
         const stillAvailable = await isAvatarAvailable(data.code, avatarId);
         if (!stillAvailable) {
-            alert(UI_TEXT.ERR.AVATAR_TAKEN);
+            await Modal.alert(UI_TEXT.ERR.AVATAR_TAKEN, { icon: '🎭', title: 'Avatar ถูกใช้แล้ว' });
             return;
         }
 
@@ -93,7 +119,7 @@ export const LobbyActions = {
                 code = generateRoomCode();
                 attempts++;
                 if (attempts > 20) {
-                    alert(UI_TEXT.ERR.CANNOT_CREATE);
+                    await Modal.alert(UI_TEXT.ERR.CANNOT_CREATE, { icon: '❌', title: 'สร้างห้องไม่สำเร็จ' });
                     return;
                 }
             } while (await RoomAPI.get(code));
@@ -123,7 +149,7 @@ export const LobbyActions = {
 
         } catch (err) {
             console.error(err);
-            alert('สร้างห้องไม่สำเร็จ: ' + err.message);
+            await Modal.alert('สร้างห้องไม่สำเร็จ: ' + err.message, { icon: '❌', title: 'เกิดข้อผิดพลาด' });
         } finally {
             btn.disabled = false;
         }
@@ -135,13 +161,21 @@ export const LobbyActions = {
 
         try {
             const room = await RoomAPI.get(code);
-            if (!room) return alert(UI_TEXT.ERR.ROOM_NOT_FOUND);
-            if (room.players.length >= GAME_CONFIG.MAX_PLAYERS) return alert(UI_TEXT.ERR.ROOM_FULL);
+            if (!room) {
+                await Modal.alert(UI_TEXT.ERR.ROOM_NOT_FOUND, { icon: '🔍', title: 'ไม่พบห้อง' });
+                return;
+            }
+            if (room.players.length >= GAME_CONFIG.MAX_PLAYERS) {
+                await Modal.alert(UI_TEXT.ERR.ROOM_FULL, { icon: '🚫', title: 'ห้องเต็ม' });
+                return;
+            }
             if (room.players.some(p => p.name.toLowerCase() === name.toLowerCase())) {
-                return alert(UI_TEXT.ERR.NAME_DUPLICATE);
+                await Modal.alert(UI_TEXT.ERR.NAME_DUPLICATE, { icon: '👤', title: 'ชื่อซ้ำ' });
+                return;
             }
             if (room.players.some(p => p.avatarId === avatarId)) {
-                return alert(UI_TEXT.ERR.AVATAR_TAKEN);
+                await Modal.alert(UI_TEXT.ERR.AVATAR_TAKEN, { icon: '🎭', title: 'Avatar ถูกใช้แล้ว' });
+                return;
             }
 
             const me = {
@@ -168,7 +202,7 @@ export const LobbyActions = {
 
         } catch (err) {
             console.error(err);
-            alert('เข้าห้องไม่สำเร็จ: ' + err.message);
+            await Modal.alert('เข้าห้องไม่สำเร็จ: ' + err.message, { icon: '❌', title: 'เกิดข้อผิดพลาด' });
         } finally {
             btn.disabled = false;
         }
@@ -199,15 +233,20 @@ export const LobbyActions = {
 
             await RoomAPI.update(state.roomCode, { players: updatedPlayers });
 
-            console.log(newReady ? '✅ Ready' : '❌ Not ready');
-
         } catch (err) {
             console.error('Toggle ready error:', err);
         }
     },
 
     async leaveRoom() {
-        if (!confirm('ออกจากห้อง?')) return;
+        const ok = await Modal.confirm('คุณต้องการออกจากห้องนี้ใช่ไหม?', {
+            icon: '🚪',
+            title: 'ออกจากห้อง',
+            okText: 'ออก',
+            cancelText: 'ยกเลิก',
+            variant: 'danger',
+        });
+        if (!ok) return;
 
         const roomCode = state.roomCode;
         const myUid = state.myUid;
@@ -221,14 +260,13 @@ export const LobbyActions = {
 
             if (me && remaining.length > 0) {
                 await ChatAPI.sendSystemMessage(roomCode, `${me.name} left the room`);
-                console.log('📨 ส่ง: left the room');
             }
 
             if (remaining.length === 0) {
                 await RoomAPI.delete(roomCode);
                 await PresenceAPI.clearRoom(roomCode);
                 await ChatAPI.clearMessages(roomCode);
-                console.log('🗑️ ลบห้อง:', roomCode);
+                await TypingAPI.clearTyping(roomCode);
             } else {
                 const newHostId = room.hostId === myUid
                     ? remaining[0].uid
@@ -260,6 +298,7 @@ export const LobbyActions = {
         }
 
         await PresenceAPI.goOffline(roomCode, myUid);
+        await TypingAPI.setTyping(roomCode, { uid: myUid }, false);
         PresenceManager.stop();
         this.stopListening();
 
@@ -270,14 +309,12 @@ export const LobbyActions = {
     scheduleRoomDelete(roomCode) {
         if (!roomCode) return;
 
-        console.log('⏰ ตั้งเวลาลบห้อง:', roomCode, '(3 วิ)');
-
         setTimeout(async () => {
             try {
                 await PresenceAPI.clearRoom(roomCode);
                 await ChatAPI.clearMessages(roomCode);
+                await TypingAPI.clearTyping(roomCode);
                 await RoomAPI.delete(roomCode);
-                console.log('🗑️ ลบห้อง:', roomCode);
             } catch (err) {
                 console.log('ℹ️ ลบห้องไม่สำเร็จ:', err.message);
             }
@@ -287,14 +324,16 @@ export const LobbyActions = {
     startListening() {
         if (state.unsubscribeRoom) state.unsubscribeRoom();
 
-        state.unsubscribeRoom = RoomAPI.listen(state.roomCode, (room) => {
+        state.unsubscribeRoom = RoomAPI.listen(state.roomCode, async (room) => {
             if (!room) {
                 if (state.status === GAME_CONFIG.ROOM_STATUS.FINISHED) {
-                    console.log('🏁 ห้องถูกลบหลังจบเกม');
                     return;
                 }
 
-                alert(UI_TEXT.ERR.ROOM_CLOSED);
+                await Modal.alert(UI_TEXT.ERR.ROOM_CLOSED, {
+                    icon: '🚪',
+                    title: 'ห้องถูกปิด',
+                });
                 this.stopListening();
                 PresenceManager.stop();
                 StateManager.reset();
@@ -310,9 +349,7 @@ export const LobbyActions = {
             const me = room.players.find(p => p.uid === state.myUid);
             if (me) state.myReady = me.isReady || false;
 
-            // ⭐ เกมหยุด (finished) → Result Screen
             if (room.status === GAME_CONFIG.ROOM_STATUS.FINISHED) {
-                console.log('🏆 เกมจบ');
                 this.stopListening();
                 PresenceManager.stop();
                 this.scheduleRoomDelete(state.roomCode);
@@ -323,22 +360,24 @@ export const LobbyActions = {
                 return;
             }
 
-            // ⭐ เกมเริ่ม (playing) → หยุด lobby + เริ่ม game listener
             if (room.status === 'playing') {
-                console.log('🎮 เกมกำลังเล่น — เริ่ม game listener');
                 this.stopListening();
                 window.startGameListener?.();
                 return;
             }
 
-            // ⭐ Lobby ปกติ
             renderLobby();
         });
 
-        // ⭐ Chat listener
         if (unsubscribeChat) unsubscribeChat();
         unsubscribeChat = ChatAPI.listenMessages(state.roomCode, (messages) => {
             renderChat(messages);
+        });
+
+        if (unsubscribeTyping) unsubscribeTyping();
+        unsubscribeTyping = TypingAPI.listenTyping(state.roomCode, (users) => {
+            typingUsers = users;
+            renderLobby();
         });
     },
 
@@ -351,7 +390,30 @@ export const LobbyActions = {
             unsubscribeChat();
             unsubscribeChat = null;
         }
-        console.log('🔇 หยุดฟัง listeners');
+        if (unsubscribeTyping) {
+            unsubscribeTyping();
+            unsubscribeTyping = null;
+        }
+        typingUsers = [];
+    },
+
+    async handleTyping() {
+        const input = document.getElementById('chat-input');
+        if (!input) return;
+
+        const isTyping = input.value.length > 0;
+
+        if (isTyping === myTypingState) return;
+        myTypingState = isTyping;
+
+        const me = state.players.find(p => p.uid === state.myUid);
+        if (!me) return;
+
+        try {
+            await TypingAPI.setTyping(state.roomCode, me, isTyping);
+        } catch (err) {
+            console.error('Typing error:', err);
+        }
     },
 };
 
@@ -448,6 +510,13 @@ async function sendChatMessage() {
 
     input.value = '';
     input.focus();
+
+    if (myTypingState) {
+        myTypingState = false;
+        try {
+            await TypingAPI.setTyping(state.roomCode, me, false);
+        } catch (err) { /* ignore */ }
+    }
 }
 
 function renderChat(messages) {
@@ -528,21 +597,21 @@ export function renderLobby() {
 
     const slots = document.querySelectorAll('.player-slot');
 
+    // ⭐ Step 1: Reset ทุก slot (แต่เก็บ badge ไว้)
     slots.forEach(slot => {
         slot.classList.remove('occupied', 'is-me', 'is-host', 'is-ready');
 
         const avatarEl = slot.querySelector('.avatar');
-        avatarEl.innerHTML = '';
-        avatarEl.classList.remove('is-new');
 
-        const borderDiv = document.createElement('div');
-        borderDiv.className = 'avatar-border';
-        avatarEl.appendChild(borderDiv);
+        // ⭐ ลบเฉพาะ element ที่ไม่ใช่ badge
+        avatarEl.querySelectorAll(':scope > *:not(.typing-badge)').forEach(el => el.remove());
 
-        const placeholder = document.createElement('span');
-        placeholder.className = 'avatar-placeholder';
-        placeholder.textContent = '?';
-        avatarEl.appendChild(placeholder);
+        // ⭐ ซ่อน badge ไว้ก่อน (จะเปิดใน Step 2 ถ้าจำเป็น)
+        const badge = avatarEl.querySelector('.typing-badge');
+        if (badge) badge.classList.remove('show');
+
+        // ⭐ ซ่อน avatar ไว้ก่อน
+        avatarEl.style.display = 'none';
 
         slot.querySelector('.player-name').textContent = UI_TEXT.LOBBY.SLOT_EMPTY;
 
@@ -553,6 +622,7 @@ export function renderLobby() {
     const previousUids = renderLobby._previousUids || [];
     const currentUids = state.players.map(p => p.uid);
 
+    // ⭐ Step 2: Fill players
     state.players.forEach((player, index) => {
         if (index >= GAME_CONFIG.MAX_PLAYERS) return;
         const slot = slots[index];
@@ -563,25 +633,44 @@ export function renderLobby() {
         }
 
         const avatarEl = slot.querySelector('.avatar');
+        avatarEl.style.display = 'flex';
+
         const isNewPlayer = !previousUids.includes(player.uid);
 
+        // ⭐ สร้าง border
+        const borderDiv = document.createElement('div');
+        borderDiv.className = 'avatar-border';
+        avatarEl.insertBefore(borderDiv, avatarEl.firstChild);
+
+        // ⭐ สร้าง img หรือ placeholder
         if (player.avatarId) {
-            avatarEl.innerHTML = '';
-
-            const borderDiv = document.createElement('div');
-            borderDiv.className = 'avatar-border';
-            avatarEl.appendChild(borderDiv);
-
             const img = document.createElement('img');
             img.src = `${GAME_CONFIG.AVATAR_PATH}${player.avatarId}.png`;
             img.alt = player.name;
-            avatarEl.appendChild(img);
+            // ⭐ แทรกก่อน badge
+            const badge = avatarEl.querySelector('.typing-badge');
+            if (badge) {
+                avatarEl.insertBefore(img, badge);
+            } else {
+                avatarEl.appendChild(img);
+            }
 
             if (isNewPlayer) {
                 avatarEl.classList.add('is-new');
             }
+        } else {
+            const placeholder = document.createElement('span');
+            placeholder.className = 'avatar-placeholder';
+            placeholder.textContent = '?';
+            const badge = avatarEl.querySelector('.typing-badge');
+            if (badge) {
+                avatarEl.insertBefore(placeholder, badge);
+            } else {
+                avatarEl.appendChild(placeholder);
+            }
         }
 
+        // ⭐ ชื่อ
         let nameText = player.name;
         if (player.uid === state.myUid) {
             slot.classList.add('is-me');
@@ -591,14 +680,24 @@ export function renderLobby() {
         const nameEl = slot.querySelector('.player-name');
         nameEl.textContent = nameText;
 
+        // ⭐ Crown (host)
         if (player.isHost) {
             slot.classList.add('is-host');
-            const badge = document.createElement('span');
-            badge.className = 'host-badge';
-            badge.textContent = ' ' + UI_TEXT.LOBBY.HOST_BADGE;
-            nameEl.appendChild(badge);
+            const crownImg = document.createElement('img');
+            crownImg.className = 'host-crown';
+            crownImg.src = './assets/avatars/ingame asset/crown.svg';
+            crownImg.alt = 'host';
+            nameEl.prepend(crownImg);
         }
 
+        // ⭐ Typing badge — toggle class (ไม่ลบ element)
+        const badge = avatarEl.querySelector('.typing-badge');
+        if (badge) {
+            const isTyping = typingUsers.some(t => t.uid === player.uid);
+            badge.classList.toggle('show', isTyping);
+        }
+
+        // ⭐ Ready banner
         const banner = document.createElement('div');
         banner.className = 'ready-banner';
         if (player.isReady) {
@@ -624,6 +723,7 @@ export const AvatarActions = {
 
 export const ChatActions = {
     send: () => sendChatMessage(),
+    handleTyping: () => LobbyActions.handleTyping(),
 };
 
 export const ReadyActions = {

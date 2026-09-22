@@ -3,12 +3,13 @@
 // ============================================
 import { GAME_CONFIG, UI_TEXT } from '../config/game-config.js';
 import {
-    RoomAPI, PresenceAPI, ChatAPI, GameAPI, GameLogAPI
+    RoomAPI, PresenceAPI, ChatAPI, GameAPI, GameLogAPI, TypingAPI
 } from '../shared/firebase.js';
 import { PresenceManager } from '../shared/presence.js';
 import { state, StateManager } from '../shared/state.js';
 import { switchScreen } from '../shared/utils.js';
 import { LobbyActions } from '../lobby/lobby.js';
+import { Modal } from '../shared/modal.js';
 import {
     determineWinner,
     calculateHearts,
@@ -21,6 +22,7 @@ import {
     renderEventLog,
     getSelectedCardIndex,
     resetSelection,
+    setTypingUsers,
 } from './gameplay-ui.js';
 
 // ============================================
@@ -31,6 +33,17 @@ let isProcessingShowdown = false;
 let isAfterShowdown = false;
 let unsubscribeGameChat = null;
 let unsubscribeGameLog = null;
+let unsubscribeTyping = null;
+
+let thrownLoggedAt = 0;
+let newRoundLoggedAt = 0;
+
+// ⭐ Typing state
+let myTypingState = false;
+
+function isHost() {
+    return state.isHost === true;
+}
 
 // ============================================
 // Gameplay Actions
@@ -42,21 +55,30 @@ export const GameplayActions = {
             const room = await RoomAPI.get(state.roomCode);
             if (!room) throw new Error('ROOM_NOT_FOUND');
             if (room.players.length < GAME_CONFIG.MIN_PLAYERS) {
-                return alert(UI_TEXT.ERR.NEED_MORE_PLAYERS);
+                await Modal.alert(UI_TEXT.ERR.NEED_MORE_PLAYERS, {
+                    icon: '👥',
+                    title: 'ผู้เล่นไม่พอ',
+                });
+                return;
             }
 
             console.log('🎮 [startGame] เริ่มเกม...');
 
             LobbyActions.stopListening();
             await GameAPI.startGame(state.roomCode);
-            await GameLogAPI.addLog(state.roomCode, '🎮 เกมเริ่ม! แจกไพ่คนละ 2 ใบ');
-            startGameListener();
 
-            console.log('🎮 [startGame] เสร็จ');
+            if (isHost()) {
+                await GameLogAPI.addLog(state.roomCode, '🎮 เกมเริ่ม! แจกไพ่คนละ 2 ใบ');
+            }
+
+            startGameListener();
 
         } catch (err) {
             console.error('Start game error:', err);
-            alert('เริ่มเกมไม่สำเร็จ: ' + err.message);
+            await Modal.alert('เริ่มเกมไม่สำเร็จ: ' + err.message, {
+                icon: '❌',
+                title: 'เกิดข้อผิดพลาด',
+            });
         }
     },
 
@@ -64,13 +86,15 @@ export const GameplayActions = {
         try {
             const cardIndex = getSelectedCardIndex();
             if (cardIndex === null) {
-                alert('กรุณาเลือกการ์ดก่อน');
+                await Modal.alert('กรุณาเลือกการ์ดก่อนทิ้ง', {
+                    icon: '🃏',
+                    title: 'ยังไม่ได้เลือกการ์ด',
+                });
                 return;
             }
 
             const me = state.players.find(p => p.uid === state.myUid);
 
-            console.log('🎴 [throwCard] index:', cardIndex);
             await GameAPI.throwCard(state.roomCode, state.myUid, cardIndex);
             resetSelection();
 
@@ -78,9 +102,26 @@ export const GameplayActions = {
                 await GameLogAPI.addLog(state.roomCode, `🎴 ${me.name} ทิ้งไพ่`);
             }
 
+            if (isHost()) {
+                const now = Date.now();
+                if (now - thrownLoggedAt > 3000) {
+                    const room = await RoomAPI.get(state.roomCode);
+                    if (room && room.phase === 'decide') {
+                        thrownLoggedAt = now;
+                        await GameLogAPI.addLog(
+                            state.roomCode,
+                            '✅ ทุกคนทิ้งครบ → เข้าสู่ขั้นตัดสินใจ'
+                        );
+                    }
+                }
+            }
+
         } catch (err) {
             console.error('Throw error:', err);
-            alert('ทิ้งไม่สำเร็จ: ' + err.message);
+            await Modal.alert('ทิ้งไม่สำเร็จ: ' + err.message, {
+                icon: '❌',
+                title: 'เกิดข้อผิดพลาด',
+            });
         }
     },
 
@@ -88,7 +129,6 @@ export const GameplayActions = {
         try {
             const me = state.players.find(p => p.uid === state.myUid);
 
-            console.log('⚔️ [decide]', decision);
             await GameAPI.decide(state.roomCode, state.myUid, decision);
 
             if (me) {
@@ -101,12 +141,17 @@ export const GameplayActions = {
 
         } catch (err) {
             console.error('Decide error:', err);
-            alert('ตัดสินใจไม่สำเร็จ: ' + err.message);
+            await Modal.alert('ตัดสินใจไม่สำเร็จ: ' + err.message, {
+                icon: '❌',
+                title: 'เกิดข้อผิดพลาด',
+            });
         }
     },
 
     async processShowdown() {
         try {
+            if (!isHost()) return;
+
             const room = await RoomAPI.get(state.roomCode);
             if (!room || room.phase !== 'showdown') return;
             if (room.showdownResult) return;
@@ -134,8 +179,6 @@ export const GameplayActions = {
                 await GameLogAPI.addLog(state.roomCode, `🤷 ไม่มีผู้ชนะรอบนี้`);
             }
 
-            console.log('✅ [processShowdown] เสร็จ');
-
         } catch (err) {
             console.error('❌ [processShowdown]:', err);
         }
@@ -146,6 +189,11 @@ export const GameplayActions = {
         isAfterShowdown = true;
 
         try {
+            if (!isHost()) {
+                isAfterShowdown = false;
+                return;
+            }
+
             const room = await RoomAPI.get(state.roomCode);
             if (!room) {
                 isAfterShowdown = false;
@@ -164,7 +212,12 @@ export const GameplayActions = {
             }
 
             await GameAPI.startNewRound(state.roomCode);
-            await GameLogAPI.addLog(state.roomCode, `🔁 รอบใหม่เริ่ม`);
+
+            const now = Date.now();
+            if (now - newRoundLoggedAt > 3000) {
+                newRoundLoggedAt = now;
+                await GameLogAPI.addLog(state.roomCode, `🔁 รอบใหม่เริ่ม`);
+            }
 
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById('game-screen').classList.add('active');
@@ -176,6 +229,26 @@ export const GameplayActions = {
         } catch (err) {
             console.error('❌ [afterShowdown]:', err);
             isAfterShowdown = false;
+        }
+    },
+
+    // ⭐ เรียกจาก input event ของ game chat
+    async handleTyping() {
+        const input = document.getElementById('game-chat-input');
+        if (!input) return;
+
+        const isTyping = input.value.length > 0;
+
+        if (isTyping === myTypingState) return;
+        myTypingState = isTyping;
+
+        const me = state.players.find(p => p.uid === state.myUid);
+        if (!me) return;
+
+        try {
+            await TypingAPI.setTyping(state.roomCode, me, isTyping);
+        } catch (err) {
+            console.error('Typing error:', err);
         }
     },
 
@@ -191,6 +264,14 @@ export const GameplayActions = {
             unsubscribeGameLog();
             unsubscribeGameLog = null;
         }
+        if (unsubscribeTyping) {
+            unsubscribeTyping();
+            unsubscribeTyping = null;
+        }
+
+        // reset typing
+        myTypingState = false;
+        setTypingUsers([]);
 
         StateManager.reset();
         switchScreen('home');
@@ -206,19 +287,22 @@ export function startGameListener() {
 
     console.log('👂 [startGameListener] เริ่มฟัง');
 
-    // ⭐ Listen Chat
     if (unsubscribeGameChat) unsubscribeGameChat();
     unsubscribeGameChat = ChatAPI.listenMessages(state.roomCode, (messages) => {
         renderGameChat(messages, state.myUid);
     });
 
-    // ⭐ Listen Log
     if (unsubscribeGameLog) unsubscribeGameLog();
     unsubscribeGameLog = GameLogAPI.listenLogs(state.roomCode, (logs) => {
         renderEventLog(logs);
     });
 
-    // ⭐ Room listener
+    // ⭐ Typing listener
+    if (unsubscribeTyping) unsubscribeTyping();
+    unsubscribeTyping = TypingAPI.listenTyping(state.roomCode, (users) => {
+        setTypingUsers(users);
+    });
+
     state.unsubscribeRoom = RoomAPI.listen(state.roomCode, async (room) => {
         if (!room) return;
 
@@ -228,7 +312,6 @@ export function startGameListener() {
         const me = room.players.find(p => p.uid === state.myUid);
         if (me) state.myReady = me.isReady || false;
 
-        // --- Game Finished ---
         if (room.status === 'finished') {
             const winner = room.players.find(p => p.uid === room.winner);
             document.getElementById('winner-name').textContent =
@@ -237,15 +320,16 @@ export function startGameListener() {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById('result-screen').classList.add('active');
 
-            setTimeout(() => {
-                LobbyActions.scheduleRoomDelete(state.roomCode);
-            }, 5000);
+            if (isHost()) {
+                setTimeout(() => {
+                    LobbyActions.scheduleRoomDelete(state.roomCode);
+                }, 5000);
+            }
             return;
         }
 
         if (room.status !== 'playing') return;
 
-        // --- Showdown Phase ---
         if (room.phase === 'showdown') {
             if (!room.showdownResult) {
                 if (!isProcessingShowdown) {
@@ -283,7 +367,6 @@ export function startGameListener() {
             return;
         }
 
-        // --- Discard / Decide ---
         const gameScreen = document.getElementById('game-screen');
 
         if (!gameScreen.classList.contains('active')) {

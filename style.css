@@ -1,45 +1,38 @@
 /* ============================================
-   ⭐ MENU BUTTON COLORS — แก้ไขได้ง่ายๆ ที่นี่
-   ⭐ ใช้ !important เพื่อ override .game-btn default
+   ⭐ MENU BUTTON COLORS
 ============================================ */
-
-/* --- Home Primary (สร้างห้อง) --- */
 .btn-home-primary {
-    --btn-base-color: #b45309 !important;    /* ทองเข้ม */
-    --btn-face-color: #fbbf24 !important;    /* ทอง */
-    --btn-text-color: #713f12 !important;    /* น้ำตาลเข้ม */
+    --btn-base-color: #b45309 !important;
+    --btn-face-color: #fbbf24 !important;
+    --btn-text-color: #713f12 !important;
     width: 100%;
     height: 90px;
     margin-top: 10px;
 }
 
-/* --- Home Secondary (เข้าห้อง) --- */
 .btn-home-secondary {
-    --btn-base-color: #0369a1 !important;    /* ฟ้าเข้ม */
-    --btn-face-color: #7dd3fc !important;    /* ฟ้าอ่อน */
-    --btn-text-color: #0c4a6e !important;    /* ฟ้าเข้ม */
+    --btn-base-color: #0369a1 !important;
+    --btn-face-color: #7dd3fc !important;
+    --btn-text-color: #0c4a6e !important;
     width: 100%;
     height: 90px;
     margin-top: 10px;
 }
 
-/* --- Avatar Cancel (ย้อนกลับ) --- */
 .btn-avatar-cancel {
-    --btn-base-color: #4b5563 !important;    /* เทาเข้ม */
-    --btn-face-color: #d1d5db !important;    /* เทาอ่อน */
-    --btn-text-color: #1f2937 !important;    /* ดำ */
+    --btn-base-color: #4b5563 !important;
+    --btn-face-color: #d1d5db !important;
+    --btn-text-color: #1f2937 !important;
     height: 90px;
 }
 
-/* --- Avatar Confirm (ยืนยัน) --- */
 .btn-avatar-confirm {
-    --btn-base-color: #15803d !important;    /* เขียวเข้ม */
-    --btn-face-color: #86efac !important;    /* เขียวอ่อน */
-    --btn-text-color: #14532d !important;    /* เขียวเข้ม */
+    --btn-base-color: #15803d !important;
+    --btn-face-color: #86efac !important;
+    --btn-text-color: #14532d !important;
     height: 90px;
 }
 
-/* --- Lobby Ready (พร้อม) --- */
 .btn-lobby-ready {
     --btn-base-color: #15803d !important;
     --btn-face-color: #86efac !important;
@@ -48,7 +41,6 @@
     height: 90px;
 }
 
-/* --- Lobby Start (เริ่มเกม) --- */
 .btn-lobby-start {
     --btn-base-color: #b45309 !important;
     --btn-face-color: #fbbf24 !important;
@@ -57,16 +49,14 @@
     height: 90px;
 }
 
-/* --- Lobby Leave (ออกจากห้อง) --- */
 .btn-lobby-leave {
-    --btn-base-color: #b91c1c !important;    /* แดงเข้ม */
-    --btn-face-color: #fca5a5 !important;    /* แดงอ่อน */
-    --btn-text-color: #7f1d1d !important;    /* แดงเข้ม */
+    --btn-base-color: #b91c1c !important;
+    --btn-face-color: #fca5a5 !important;
+    --btn-text-color: #7f1d1d !important;
     flex: 1;
     height: 90px;
 }
 
-/* --- Result Back (กลับหน้าแรก) --- */
 .btn-result-back {
     --btn-base-color: #0369a1 !important;
     --btn-face-color: #7dd3fc !important;
@@ -179,6 +169,11 @@ input:focus { outline: 3px solid #facc15; }
     background: rgba(255, 255, 255, 0.2);
     border-color: #ba66fb;
     color: #ba66fb;
+}
+.btn-small.copied {
+    background: rgba(34, 197, 94, 0.3);
+    border-color: #22c55e;
+    color: #22c55e;
 }
 
 /* ============================================
@@ -414,7 +409,7 @@ input:focus { outline: 3px solid #facc15; }
     align-items: center;
     justify-content: center;
     transition: all 0.3s;
-    position: relative;
+    position: relative;   /* ⭐ ให้ badge absolute อ้างอิง */
 }
 
 .player-slot .avatar .avatar-border {
@@ -479,10 +474,46 @@ input:focus { outline: 3px solid #facc15; }
     color: rgba(255, 255, 255, 0.9);
 }
 
-.host-badge {
-    color: #facc15;
-    font-size: 0.85em;
-    font-weight: normal;
+/* ============================================
+   HOST CROWN
+============================================ */
+.host-crown {
+    display: inline-block;
+    width: 1.1em;
+    height: 1.1em;
+    vertical-align: -0.15em;
+    margin-right: 4px;
+    filter: drop-shadow(0 0 4px rgba(250, 204, 21, 0.6));
+}
+
+/* ============================================
+   ⌨️ TYPING BADGE (Lobby) — v2 with in/out
+============================================ */
+.player-slot .avatar .typing-badge {
+    position: absolute !important;
+    top: -20px !important;
+    right: -30px !important;
+    width: 50px !important;
+    height: 50px !important;
+    z-index: 10 !important;
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.5));
+    pointer-events: none !important;
+    object-fit: cover;
+
+    /* ⭐ ซ่อนไว้ก่อน */
+    opacity: 0;
+    transform: scale(0) rotate(-45deg);
+    transform-origin: bottom left;
+
+    /* ⭐ transition ทั้งเข้าและออก */
+    transition:
+        opacity 0.25s ease,
+        transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.player-slot .avatar .typing-badge.show {
+    opacity: 1;
+    transform: scale(1) rotate(0);
 }
 
 /* ============================================
@@ -688,6 +719,190 @@ input:focus { outline: 3px solid #facc15; }
 }
 
 /* ============================================
+   🪟 MODAL SYSTEM
+============================================ */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+
+.modal-backdrop.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-box {
+    position: relative;
+    background: rgba(15, 30, 74, 0.98);
+    border: 3px solid #ba66fb;
+    padding: 40px 32px 28px;
+    min-width: 320px;
+    max-width: 480px;
+    width: 90%;
+    text-align: center;
+    clip-path: polygon(
+        20px 0, calc(100% - 20px) 0, 100% 20px, 100% calc(100% - 20px),
+        calc(100% - 20px) 100%, 20px 100%, 0 calc(100% - 20px), 0 20px
+    );
+    box-shadow: 0 0 40px rgba(186, 102, 251, 0.4);
+    transform: scale(0.9);
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal-backdrop.active .modal-box {
+    transform: scale(1);
+}
+
+.modal-corner {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background: #facc15;
+    pointer-events: none;
+}
+.modal-corner.tl { top: 6px; left: 6px; }
+.modal-corner.tr { top: 6px; right: 6px; }
+.modal-corner.bl { bottom: 6px; left: 6px; }
+.modal-corner.br { bottom: 6px; right: 6px; }
+
+.modal-icon {
+    font-size: 3rem;
+    margin-bottom: 12px;
+    line-height: 1;
+}
+
+.modal-title {
+    font-size: 1.2rem;
+    font-weight: 900;
+    color: #facc15;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+}
+
+.modal-text {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.9);
+    line-height: 1.5;
+    margin-bottom: 28px;
+    word-break: break-word;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.modal-btn {
+    padding: 12px 28px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 900;
+    font-size: 0.95rem;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    font-family: inherit;
+    min-width: 100px;
+}
+
+.modal-btn--primary {
+    background: #facc15;
+    color: #1e3a8a;
+    box-shadow: 0 4px 0 #b8a800;
+}
+.modal-btn--primary:hover {
+    background: #fde047;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 #b8a800;
+}
+.modal-btn--primary:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #b8a800;
+}
+
+.modal-btn--danger {
+    background: #ef4444;
+    color: white;
+    box-shadow: 0 4px 0 #991b1b;
+}
+.modal-btn--danger:hover {
+    background: #f87171;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 #991b1b;
+}
+.modal-btn--danger:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #991b1b;
+}
+
+.modal-btn--ghost {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.8);
+    border: 2px solid rgba(255, 255, 255, 0.25);
+}
+.modal-btn--ghost:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+/* ============================================
+   🪟 MODAL TOAST
+============================================ */
+.modal-toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: rgba(15, 30, 74, 0.98);
+    border: 2px solid #ba66fb;
+    border-radius: 12px;
+    padding: 12px 24px;
+    color: white;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    z-index: 10000;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.modal-toast-icon {
+    color: #22c55e;
+    font-weight: 900;
+    font-size: 1.2rem;
+}
+
+/* ============================================
+   🔒 BUTTON LOCK
+============================================ */
+.btn-locked {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    filter: grayscale(30%);
+    pointer-events: none;
+}
+
+/* ============================================
    RESPONSIVE
 ============================================ */
 @media (max-width: 1000px) {
@@ -701,6 +916,12 @@ input:focus { outline: 3px solid #facc15; }
         padding: 4px 16px;
         font-size: 0.7rem;
         letter-spacing: 2px;
+    }
+    .typing-badge {
+        width: 24px;
+        height: 24px;
+        top: -8px;
+        right: -8px;
     }
 }
 

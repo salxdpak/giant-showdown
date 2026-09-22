@@ -170,7 +170,50 @@ export const ChatAPI = {
 };
 
 // ============================================
-// 📋 GAME LOG API — Event Log ในเกม
+// ⌨️ TYPING API — ใครกำลังพิมพ์อยู่
+// ============================================
+export const TypingAPI = {
+    // ⭐ เริ่ม/หยุดพิมพ์
+    async setTyping(roomCode, player, isTyping) {
+        if (!roomCode || !player) return;
+
+        const typingRef = rtdbRef(rtdb, `rooms/${roomCode}/typing/${player.uid}`);
+
+        if (isTyping) {
+            await rtdbSet(typingRef, {
+                name: player.name,
+                avatarId: player.avatarId || null,
+            });
+            // ถ้า disconnect กลางคัน → ลบอัตโนมัติ
+            await rtdbOnDisconnect(typingRef).remove();
+        } else {
+            await rtdbRemove(typingRef);
+        }
+    },
+
+    // ⭐ ฟังสถานะการพิมพ์
+    listenTyping(roomCode, callback) {
+        const typingRef = rtdbRef(rtdb, `rooms/${roomCode}/typing`);
+        return rtdbOnValue(typingRef, (snapshot) => {
+            const data = snapshot.val() || {};
+            const typingUsers = Object.entries(data).map(([uid, info]) => ({
+                uid,
+                name: info.name,
+                avatarId: info.avatarId,
+            }));
+            callback(typingUsers);
+        });
+    },
+
+    // ⭐ ล้าง typing ทั้งห้อง
+    async clearTyping(roomCode) {
+        const typingRef = rtdbRef(rtdb, `rooms/${roomCode}/typing`);
+        await rtdbRemove(typingRef);
+    },
+};
+
+// ============================================
+// 📋 GAME LOG API
 // ============================================
 export const GameLogAPI = {
     async addLog(roomCode, text) {
@@ -325,16 +368,12 @@ export const GameAPI = {
             updateData.phase = 'decide';
             updateData.currentTurnIndex = 0;
             updateData.currentTurn = room.turnOrder[0];
-            await ChatAPI.sendSystemMessage(roomCode, `✅ ทุกคนทิ้งครบ → เข้าสู่ขั้นตัดสินใจ`);
         } else {
             updateData.currentTurnIndex = room.currentTurnIndex + 1;
             updateData.currentTurn = room.turnOrder[updateData.currentTurnIndex];
         }
 
         await RoomAPI.update(roomCode, updateData);
-
-        // ⭐ ไม่ส่ง system message (ใช้ GameLogAPI แทน)
-
     },
 
     async decide(roomCode, uid, decision) {
@@ -374,9 +413,6 @@ export const GameAPI = {
         }
 
         await RoomAPI.update(roomCode, updateData);
-
-        // ⭐ ไม่ส่ง system message
-
     },
 
     async startNewRound(roomCode) {
