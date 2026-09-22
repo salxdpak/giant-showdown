@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discard Your Card</title>
+    <link rel="stylesheet" href="./style.css">
+    <link rel="stylesheet" href="./gameplay/gameplay.css">
+</head>
+<body>
+
+    <!-- ========== HOME ========== -->
+    <div id="home-screen" class="screen active">
+        <h1 class="game-title" id="game-title">DISCARD YOUR CARD</h1>
+        <div class="form-box">
+            <label>
+                ชื่อผู้เล่น
+                <span id="name-counter" class="name-counter">0/10</span>
+            </label>
+            <input type="text" id="player-name" maxlength="10">
+
+            <button id="btn-create-room" class="game-btn btn-home-primary">
+                <span class="game-btn__base"></span>
+                <span class="game-btn__highlight"></span>
+                <span class="game-btn__face">
+                    <span class="game-btn__text">สร้างห้องใหม่</span>
+                </span>
+            </button>
+
+            <div class="divider">หรือ</div>
+
+            <label>รหัสห้อง</label>
+            <input type="text" id="room-code-input" maxlength="4"
+                   style="text-transform: uppercase;">
+
+            <button id="btn-join-room" class="game-btn btn-home-secondary">
+                <span class="game-btn__base"></span>
+                <span class="game-btn__highlight"></span>
+                <span class="game-btn__face">
+                    <span class="game-btn__text">เข้าห้อง</span>
+                </span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ========== AVATAR PICKER ========== -->
+    <div id="avatar-screen" class="screen">
+        <h2 class="avatar-title" id="avatar-title">เลือก Avatar ของคุณ</h2>
+        <p class="avatar-subtitle" id="avatar-subtitle">
+            Avatar ที่มีคนใช้แล้วจะถูกหรี่
+        </p>
+
+        <div class="avatar-grid" id="avatar-grid"></div>
+
+        <div class="avatar-actions">
+            <button id="btn-avatar-cancel" class="game-btn btn-avatar-cancel">
+                <span class="game-btn__base"></span>
+                <span class="game-btn__highlight"></span>
+                <span class="game-btn__face">
+                    <span class="game-btn__text">ย้อนกลับ</span>
+                </span>
+            </button>
+
+            <button id="btn-avatar-confirm" class="game-btn btn-avatar-confirm" disabled>
+                <span class="game-btn__base"></span>
+                <span class="game-btn__highlight"></span>
+                <span class="game-btn__face">
+                    <span class="game-btn__text">ยืนยัน</span>
+                </span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ========== LOBBY ========== -->
+    <div id="lobby-screen" class="screen">
+        <div class="lobby-container">
+
+            <div class="lobby-header">
+                <div class="lobby-header-left">
+                    <h1 class="lobby-title">LOBBY</h1>
+                    <p class="lobby-players-count">
+                        <span id="player-count">1/4</span> PLAYERS
+                    </p>
+                </div>
+
+                <div class="lobby-header-right">
+                    <span class="room-label">ROOM ID</span>
+                    <div class="room-code-box">
+                        <span class="hash">#</span>
+                        <span id="display-room-code">----</span>
+                    </div>
+                    <button id="btn-copy-code" class="btn-small">คัดลอกรหัส</button>
+                </div>
+            </div>
+
+            <div class="player-slots">
+                <div class="player-slot" data-slot="0">
+                    <div class="avatar">?</div>
+                    <div class="player-name">ว่าง</div>
+                </div>
+                <div class="player-slot" data-slot="1">
+                    <div class="avatar">?</div>
+                    <div class="player-name">ว่าง</div>
+                </div>
+                <div class="player-slot" data-slot="2">
+                    <div class="avatar">?</div>
+                    <div class="player-name">ว่าง</div>
+                </div>
+                <div class="player-slot" data-slot="3">
+                    <div class="avatar">?</div>
+                    <div class="player-name">ว่าง</div>
+                </div>
+            </div>
+
+            <div class="lobby-bottom">
+
+                <div class="chat-container">
+                    <div class="chat-label">CHAT</div>
+                    <div class="chat-messages" id="chat-messages"></div>
+                    <div class="chat-input-box">
+                        <div class="chat-icon">💬</div>
+                        <input type="text" id="chat-input" class="chat-input"
+                               placeholder="Type a message..." maxlength="100">
+                        <button id="btn-chat-send" class="chat-send">✈</button>
+                    </div>
+                </div>
+
+                <div class="lobby-actions">
+                    <button id="btn-ready" class="game-btn btn-lobby-ready" style="display:none;">
+                        <span class="game-btn__base"></span>
+                        <span class="game-btn__highlight"></span>
+                        <span class="game-btn__face">
+                            <span class="game-btn__text">พร้อม (Ready)</span>
+                        </span>
+                    </button>
+
+                    <button id="btn-start" class="game-btn btn-lobby-start" style="display:none;">
+                        <span class="game-btn__base"></span>
+                        <span class="game-btn__highlight"></span>
+                        <span class="game-btn__face">
+                            <span class="game-btn__text">เริ่มเกม</span>
+                        </span>
+                    </button>
+
+                    <button id="btn-leave" class="game-btn btn-lobby-leave">
+                        <span class="game-btn__base"></span>
+                        <span class="game-btn__highlight"></span>
+                        <span class="game-btn__face">
+                            <span class="game-btn__text">ออกจากห้อง</span>
+                        </span>
+                    </button>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ========== GAMEPLAY ========== -->
+    <div id="game-screen" class="screen">
+        <div class="game-container">
+
+            <div class="game-left">
+
+                <div class="game-panel chat-box">
+                    <div class="panel-label">CHAT</div>
+                    <div class="chat-messages" id="game-chat-messages"></div>
+                    <div class="chat-input-box">
+                        <input type="text" id="game-chat-input"
+                               placeholder="Type a message..." maxlength="100">
+                        <button id="btn-game-chat-send" class="chat-send-btn">✈</button>
+                    </div>
+                </div>
+
+                <div class="game-panel log-box">
+                    <div class="panel-label">EVENT LOG</div>
+                    <div class="log-messages" id="game-log-messages"></div>
+                </div>
+
+            </div>
+
+            <div class="game-center">
+
+                <div class="center-spacer"></div>
+
+                <div class="discard-area">
+                    <div class="discard-label">DISCARD PILE</div>
+                    <div class="discard-pile" id="discard-pile"></div>
+                </div>
+
+                <div class="hand-area">
+                    <div class="hand-cards" id="hand-cards"></div>
+                </div>
+
+            </div>
+
+            <div class="game-right">
+
+                <div class="players-column" id="player-panels"></div>
+
+                <div class="action-area" id="action-area">
+
+                    <button id="btn-fight" class="game-btn game-btn--stroke">
+                        <span class="game-btn__base"></span>
+                        <span class="game-btn__highlight"></span>
+                        <span class="game-btn__face">
+                            <span class="game-btn__text">FIGHT</span>
+                        </span>
+                    </button>
+
+                    <button id="btn-fold" class="game-btn game-btn--stroke">
+                        <span class="game-btn__base"></span>
+                        <span class="game-btn__highlight"></span>
+                        <span class="game-btn__face">
+                            <span class="game-btn__text">FOLD</span>
+                        </span>
+                    </button>
+
+                    <button id="btn-discard" class="game-btn game-btn--stroke" style="display:none;">
+                        <span class="game-btn__base"></span>
+                        <span class="game-btn__highlight"></span>
+                        <span class="game-btn__face">
+                            <span class="game-btn__text">DISCARD</span>
+                        </span>
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ========== SHOWDOWN ========== -->
+    <div id="showdown-screen" class="screen">
+        <div class="showdown-container">
+            <h1 class="showdown-title" id="showdown-title">SHOWDOWN</h1>
+            <div class="showdown-cards" id="showdown-cards"></div>
+            <div class="showdown-result" id="showdown-result"></div>
+        </div>
+    </div>
+
+    <!-- ========== RESULT ========== -->
+    <div id="result-screen" class="screen">
+        <div class="winner-box">
+            <h2 class="winner-title" id="winner-title">🏆 ผู้ชนะคือ</h2>
+            <div id="winner-name" class="winner-name">-</div>
+
+            <button id="btn-back-home" class="game-btn btn-result-back">
+                <span class="game-btn__base"></span>
+                <span class="game-btn__highlight"></span>
+                <span class="game-btn__face">
+                    <span class="game-btn__text">กลับไปหน้าแรก</span>
+                </span>
+            </button>
+        </div>
+    </div>
+
+    <script type="module" src="./app.js"></script>
+</body>
+</html>

@@ -1,0 +1,354 @@
+/* ============================================
+   🎨 DEBUG LAYOUT — เห็น Container ทุกส่วน
+   ⚠️ ลบออกเมื่อไม่ใช้ (หรือ comment <link>)
+============================================ */
+
+/* ============================================
+   LEVEL 1: Container หลัก (Grid)
+============================================ */
+.game-container {
+    background: rgba(255, 0, 0, 0.08) !important;
+    outline: 3px dashed red !important;
+    outline-offset: -3px !important;
+    position: relative;
+}
+
+.game-container::after {
+    content: 'game-container (grid 3 cols)';
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    background: red;
+    color: white;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 3px;
+    z-index: 9999;
+    font-family: monospace;
+    pointer-events: none;
+}
+
+/* ============================================
+   LEVEL 2: 3 Columns หลัก
+============================================ */
+
+/* ⭐ LEFT */
+.game-left {
+    background: rgba(0, 255, 0, 0.08) !important;
+    outline: 3px dashed lime !important;
+    outline-offset: -3px !important;
+    position: relative;
+}
+
+.game-left::after {
+    content: 'game-left';
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    background: lime;
+    color: black;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 3px;
+    z-index: 9999;
+    font-family: monospace;
+    pointer-events: none;
+}
+
+/* ⭐ CENTER */
+.game-center {
+    background: rgba(0, 128, 255, 0.08) !important;
+    outline: 3px dashed dodgerblue !important;
+    outline-offset: -3px !important;
+    position: relative;
+}
+
+.game-center::after {
+    content: 'game-center';
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    background: dodgerblue;
+    color: white;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 3px;
+    z-index: 9999;
+    font-family: monospace;
+    pointer-events: none;
+}
+
+/* ⭐ RIGHT */
+.game-right {
+    background: rgba(255, 255, 0, 0.08) !important;
+    outline: 3px dashed yellow !important;
+    outline-offset: -3px !important;
+    position: relative;
+}
+
+.game-right::after {
+    content: 'game-right';
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    background: yellow;
+    color: black;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 3px;
+    z-index: 9999;
+    font-family: monospace;
+    pointer-events: none;
+}
+
+/* ============================================
+   LEVEL 3: Panel ย่อย
+============================================ */
+
+/* ⭐ Chat Box */
+.chat-box {
+    background: rgba(0, 255, 255, 0.12) !important;
+    outline: 2px solid cyan !important;
+    outline-offset: -2px !important;
+    position: relative;
+}
+
+.chat-box::after {
+    content: 'chat-box';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: cyan;
+    color: black;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+    z-index: 9999;
+    font-family: monospace;
+    pointer-events: none;
+}
+
+/* ⭐ Log Box */
+.log-box {
+    background: rgba(255, 128, 0, 0.12) !important;
+    outline: 2px solid orange !important;
+    outline-offset: -2px !important;
+    position: relative;
+}
+
+.log-box::after {
+    content: 'log-box';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: orange;
+    color: black;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+    z-index: 9999;
+    font-family: monospace;
+    pointer-events: none;
+}
+
+/* ⭐ Discard Area */
+.discard-area {
+    background: rgba(255, 0, 0, 0.12) !important;
+    outline: 2px solid red !important;
+    outline-offset: -2px !important;
+    position: relative;
+}
+
+.discard-area::after {
+    content: 'discard-area';
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    background: red;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+    z-index: 9999;
+    font-family: monospace;
+    pointer-events: none;
+}
+
+/* ⭐ Hand Area */
+.hand-area {
+    background: rgba(0, 255, 0, 0.12) !important;
+    outline: 2px solid lime !important;
+    outline-offset: -2px !important;
+    position: relative;
+}
+
+.hand-area::after {
+    content: 'hand-area';
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    background: lime;
+    color: black;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+    z-index: 9999;
+    font-family: monospace;
+    pointer-events: none;
+}
+
+/* ⭐ Players Column */
+.players-column {
+    background: rgba(255, 0, 255, 0.1) !important;
+    outline: 2px dashed magenta !important;
+    outline-offset: -2px !important;
+    position: relative;
+}
+
+.players-column::after {
+    content: 'players-column';
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    background: magenta;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+    z-index: 9999;
+    font-family: monospace;
+    pointer-events: none;
+}
+
+/* ⭐ Player Panel */
+.player-panel {
+    background: rgba(255, 0, 255, 0.15) !important;
+    outline: 2px solid magenta !important;
+    outline-offset: -2px !important;
+    position: relative;
+}
+
+/* ⭐ Action Area */
+.action-area {
+    background: rgba(0, 128, 255, 0.15) !important;
+    outline: 2px solid dodgerblue !important;
+    outline-offset: -2px !important;
+    position: relative;
+}
+
+.action-area::after {
+    content: 'action-area';
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    background: dodgerblue;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+    z-index: 9999;
+    font-family: monospace;
+    pointer-events: none;
+}
+
+/* ============================================
+   ⭐ LEVEL 4: Spacer (สำคัญ!)
+============================================ */
+.center-spacer {
+    background: rgba(255, 255, 0, 0.3) !important;
+    outline: 2px dashed yellow !important;
+    outline-offset: -2px !important;
+    min-height: 40px !important;
+    position: relative;
+}
+
+.center-spacer::after {
+    content: 'SPACER (flex: 1)';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: yellow;
+    color: black;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 3px;
+    z-index: 9999;
+    font-family: monospace;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+/* ============================================
+   ⭐ LEVEL 5: Inner Elements
+============================================ */
+
+/* Chat messages area */
+.chat-messages,
+.log-messages {
+    background: rgba(0, 255, 255, 0.05) !important;
+    outline: 1px solid rgba(0, 255, 255, 0.5) !important;
+    outline-offset: -1px !important;
+}
+
+/* Chat input */
+.chat-input-box {
+    background: rgba(255, 100, 100, 0.15) !important;
+    outline: 1px solid red !important;
+    outline-offset: -1px !important;
+}
+
+/* Discard pile */
+.discard-pile {
+    background: rgba(255, 0, 0, 0.08) !important;
+    outline: 1px dashed red !important;
+    outline-offset: -1px !important;
+}
+
+/* Hand cards container */
+.hand-cards {
+    background: rgba(0, 255, 0, 0.08) !important;
+    outline: 1px dashed lime !important;
+    outline-offset: -1px !important;
+}
+
+/* ============================================
+   ⭐ แสดง Sizes ของทุก Element (optional)
+============================================ */
+
+/* ถ้าอยากเห็นขนาดของ element → เปิด block นี้ */
+/*
+.game-container *:not(script):not(style)::before {
+    content: attr(data-size);
+    position: absolute;
+    bottom: 2px;
+    left: 2px;
+    background: black;
+    color: white;
+    font-size: 9px;
+    font-family: monospace;
+    padding: 1px 4px;
+    z-index: 99999;
+    pointer-events: none;
+}
+*/
+
+/* ============================================
+   ⭐ HIDE OVERFLOW (ให้สีสวย)
+============================================ */
+.game-panel::before,
+.discard-area::before,
+.player-panel::before {
+    background: transparent !important;
+}
